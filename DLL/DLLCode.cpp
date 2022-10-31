@@ -54,7 +54,7 @@ int myFunc(LPWSTR str)
 void readData(struct users* people)
 {
     HANDLE fileStart;
-    fileStart = CreateFile(L"C:\\Users\\aserg\\source\\repos\\DLL\\DLL\\Users.csv", // открываемый файл
+    fileStart = CreateFile(L"C:\\Users\\сергеичевад\\source\\repos\\DLL\\DLL\\Users.csv", // открываемый файл
         GENERIC_READ, // открываем для чтения
         FILE_SHARE_READ, // для совместного чтения
         NULL, // защита по умолчанию
@@ -78,22 +78,17 @@ void readData(struct users* people)
     
     char* dataConvertToStruct = strtok(argumentsFromFile, ";");
     int countRecords;
-    char* surname = calloc(100, sizeof(char));
-    char* name = calloc(100, sizeof(char));
-    char* midname = calloc(100, sizeof(char));
+
     for (int i = 0; i<100; i++)
     {
         countRecords = i;
-        sprintf(surname, L"%s", dataConvertToStruct);
-        people[i].surname = surname;
+        people[i].surname = dataConvertToStruct;
         dataConvertToStruct = strtok(NULL, ";\r\n");
 
-        sprintf(name, L"%s", dataConvertToStruct);
-        people[i].name = name;
+        people[i].name = dataConvertToStruct;
         dataConvertToStruct = strtok(NULL, ";\r\n");
 
-        sprintf(midname, L"%s", dataConvertToStruct);
-        people[i].midname = midname;
+        people[i].midname = dataConvertToStruct;
         dataConvertToStruct = strtok(NULL, ";\r\n");
 
         people[i].age = atoi(dataConvertToStruct);
@@ -107,18 +102,34 @@ void readData(struct users* people)
 
 void searchSurname(struct users* people)
 {
-    int* indexes = calloc(1, sizeof(int));
+    struct users* currentPeople = malloc(sizeof(struct users));
+    struct users* forCurrentPeople;
     int j = 0;
-    char* des = L"Десятков";
-    people[1].surname = L"Десятков";
+    char* des = "Десятков";
     for (int i = 0; i < 100; i++)
     {
-        if (people[i].surname == des)
+        if (strstr(people[i].surname, des) != NULL)
         {
-            indexes[j] = i;
-            indexes = realloc(j + 2, sizeof(int));
+            currentPeople[j] = people[i];
+            forCurrentPeople = realloc(currentPeople, (j + 2) * sizeof(struct users));
             j++;
+            currentPeople = forCurrentPeople;
         }
     }
+    
     MessageBox(NULL, L"awd", L"Wassup", MB_OK);
+}
+
+void writeToFile(struct users* currentPeople)
+{
+    HANDLE fileResult = CreateFile(L"Result.txt", // создаваемый файл
+        GENERIC_WRITE, // открывается для записи
+        FILE_SHARE_WRITE, // совместно не используется
+        NULL, // защита по умолчанию
+        CREATE_ALWAYS, // переписывает существующий
+        FILE_ATTRIBUTE_NORMAL, // асинхронный ввод/вывод I/O
+        NULL); // атрибутов шаблона нет
+    DWORD countFileSymbols;
+    WriteFile(fileResult, forAnswer, forCountSymbols, &countFileSymbols, NULL);
+    CloseHandle(fileResult);
 }

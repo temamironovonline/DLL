@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include <stdio.h>
 #include <malloc.h>
+#include "HeaderDLL.h"
 
 BOOL WINAPI DllMain(
     HINSTANCE hinstDLL,  // handle to DLL module
@@ -33,28 +34,11 @@ BOOL WINAPI DllMain(
     return TRUE;  // Successful DLL_PROCESS_ATTACH.
 }
 
-__declspec(dllimport) int myFunc(LPWSTR str);
-__declspec(dllimport) void readData(struct users* people);
-__declspec(dllimport) void searchSurname(struct users* people);
 
-
-struct users
-{
-    char* surname;
-    char* name;
-    char* midname;
-    int age;
-};
-
-int myFunc(LPWSTR str)
-{
-    MessageBox(NULL, str, L"Wassup", MB_OK);
-    return 0;
-}
 void readData(struct users* people)
 {
     HANDLE fileStart;
-    fileStart = CreateFile(L"C:\\Users\\сергеичевад\\source\\repos\\DLL\\DLL\\Users.csv", // открываемый файл
+    fileStart = CreateFile(L"C:\\Users\\aserg\\source\\repos\\DLL\\DLL\\Users.csv", // открываемый файл
         GENERIC_READ, // открываем для чтения
         FILE_SHARE_READ, // для совместного чтения
         NULL, // защита по умолчанию
@@ -98,17 +82,18 @@ void readData(struct users* people)
     CloseHandle(fileStart);
 
     searchSurname(people);
+    searchSurnameIvanova(people);
 }
 
 void searchSurname(struct users* people)
 {
     struct users* currentPeople = malloc(sizeof(struct users));
     struct users* forCurrentPeople;
-    int j = 0;
-    char* des = "Десятков";
+    int j = 0, countOfRows = 1;
+    char* forComprasion = "Гуськов";
     for (int i = 0; i < 100; i++)
     {
-        if (strstr(people[i].surname, des) != NULL)
+        if (strstr(people[i].surname, forComprasion) != NULL)
         {
             currentPeople[j] = people[i];
             forCurrentPeople = realloc(currentPeople, (j + 2) * sizeof(struct users));
@@ -116,13 +101,31 @@ void searchSurname(struct users* people)
             currentPeople = forCurrentPeople;
         }
     }
-    
-    MessageBox(NULL, L"awd", L"Wassup", MB_OK);
+    writeToFile(currentPeople, j);
 }
 
-void writeToFile(struct users* currentPeople)
+void searchSurnameIvanova(struct users* people)
 {
-    HANDLE fileResult = CreateFile(L"Result.txt", // создаваемый файл
+    struct users* currentPeople = malloc(sizeof(struct users));
+    struct users* forCurrentPeople;
+    int j = 0, countOfRows = 1;
+    char* forComprasion = "Иванова";
+    for (int i = 0; i < 100; i++)
+    {
+        if (strstr(people[i].surname, forComprasion) != NULL)
+        {
+            currentPeople[j] = people[i];
+            forCurrentPeople = realloc(currentPeople, (j + 2) * sizeof(struct users));
+            j++;
+            currentPeople = forCurrentPeople;
+        }
+    }
+    writeToFileIvanova(currentPeople, j);
+}
+
+void writeToFile(struct users* currentPeople, int countCurrentPeople)
+{
+    HANDLE fileResult = CreateFile(L"Result.csv", // создаваемый файл
         GENERIC_WRITE, // открывается для записи
         FILE_SHARE_WRITE, // совместно не используется
         NULL, // защита по умолчанию
@@ -130,6 +133,42 @@ void writeToFile(struct users* currentPeople)
         FILE_ATTRIBUTE_NORMAL, // асинхронный ввод/вывод I/O
         NULL); // атрибутов шаблона нет
     DWORD countFileSymbols;
-    WriteFile(fileResult, forAnswer, forCountSymbols, &countFileSymbols, NULL);
+    float averageAge = 0;
+    char* dataForWritting = calloc(100, sizeof(char));
+    for (int i = 0; i < countCurrentPeople; i++)
+    {
+        sprintf(dataForWritting, "%s;%s;%s;%d\n", currentPeople[i].surname, currentPeople[i].name, currentPeople[i].midname, currentPeople[i].age);
+        WriteFile(fileResult, dataForWritting, strlen(dataForWritting), &countFileSymbols, NULL);
+        averageAge += currentPeople[i].age;
+    }
+    averageAge /= countCurrentPeople;
+    sprintf(dataForWritting, "Средний возраст: %f", averageAge);
+    WriteFile(fileResult, dataForWritting, strlen(dataForWritting), &countFileSymbols, NULL);
+    free(dataForWritting);
+    CloseHandle(fileResult);
+}
+
+void writeToFileIvanova(struct users* currentPeople, int countCurrentPeople)
+{
+    HANDLE fileResult = CreateFile(L"ResultIvanova.csv", // создаваемый файл
+        GENERIC_WRITE, // открывается для записи
+        FILE_SHARE_WRITE, // совместно не используется
+        NULL, // защита по умолчанию
+        CREATE_ALWAYS, // переписывает существующий
+        FILE_ATTRIBUTE_NORMAL, // асинхронный ввод/вывод I/O
+        NULL); // атрибутов шаблона нет
+    DWORD countFileSymbols;
+    float averageAge = 0;
+    char* dataForWritting = calloc(100, sizeof(char));
+    for (int i = 0; i < countCurrentPeople; i++)
+    {
+        sprintf(dataForWritting, "%s;%s;%s;%d\n", currentPeople[i].surname, currentPeople[i].name, currentPeople[i].midname, currentPeople[i].age);
+        WriteFile(fileResult, dataForWritting, strlen(dataForWritting), &countFileSymbols, NULL);
+        averageAge += currentPeople[i].age;
+    }
+    averageAge /= countCurrentPeople;
+    sprintf(dataForWritting, "Средний возраст: %f", averageAge);
+    WriteFile(fileResult, dataForWritting, strlen(dataForWritting), &countFileSymbols, NULL);
+    free(dataForWritting);
     CloseHandle(fileResult);
 }

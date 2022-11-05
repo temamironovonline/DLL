@@ -1,22 +1,9 @@
 #include <Windows.h>
 #include <stdio.h>
-
+#include "HeaderEXE.h"
 #define PATH L"DLL.dll"
-typedef int(_cdecl* MyFunction)(LPWSTR);
-typedef int(_cdecl* forReadData)(struct users*);
-//typedef void(_cdecl* forReadData)();
 
-struct users
-{
-	char* surname;
-	char* name;
-	char* midname;
-	int age;
-};
 
-void check(struct users a) {
-
-}
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {

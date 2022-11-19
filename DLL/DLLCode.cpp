@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include "HeaderDLL.h"
+#include <time.h>
 
 BOOL WINAPI DllMain(
     HINSTANCE hinstDLL,  // handle to DLL module
@@ -35,18 +36,30 @@ BOOL WINAPI DllMain(
 }
 
 
+HANDLE* forThread = NULL;
+int countThreads = 0;
+int count = 0;
+int* answer = 0;
+CRITICAL_SECTION section = { 0 };
 
-__declspec(dllimport) int simpleDigit(int forStart, int forEnd);
+__declspec(dllimport) int simpleDigit(int* forArg);
+__declspec(dllimport) int simpleDigitThreads(int* forArg, int count);
 
-int simpleDigit(int forStart, int forEnd)
+int simpleDigit(int* forArg)
 {
-    int count = 0;
+    answer = calloc(2, sizeof(int));
+    InitializeCriticalSection(&section);
+
     int check = 0;
-    for (int i = forStart; i <= forEnd; i++)
+    if (forArg[0] == 1) forArg[0]++;
+    EnterCriticalSection(&section);
+    count = 0;
+    
+    for (int i = forArg[0]; i <= forArg[1]; i++)
     {
-        for (int j = 2; j <= forEnd; j++)
+        for (int j = 2; j <= forArg[1]; j++)
         {
-            if (i % j == 0 && i != j)
+            if ((i % j == 0) && (i != j))
             {
                 check = 1;
                 break;
@@ -60,109 +73,41 @@ int simpleDigit(int forStart, int forEnd)
         {
             check = 0;
         }
-        
     }
-    return count-1;
+    LeaveCriticalSection(&section);
+    DeleteCriticalSection(&section);
+    if (forThread != NULL)
+    {
+        for (int i = 0; i < countThreads; i++)
+        {
+            ExitThread(0);
+        }
+    }
+    else
+    {   
+        answer[0] = count;
+        answer[1] = clock();
+        return answer;
+    }
+
 }
 
-int simpleDigitThreads(int forStart, int forEnd, int countThread)
+int simpleDigitThreads(int* arguments, int countThread)
 {
-    HANDLE* forThread = calloc(sizeof(HANDLE), countThread);
-    int* digits = calloc
-
+    forThread = calloc(sizeof(HANDLE), countThread);
+    countThreads = countThread;
+    DWORD dwThreadID;
+    InitializeCriticalSection(&section);
     for (int i = 0; i < countThread; i++)
     {
-        forThread[i] = CreateThread(NULL, 0, simpleDigit, timeArray, 0, 0); // Поток с подсчетом времени
+        forThread[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)simpleDigit, arguments, 0, &dwThreadID);
     }
+    WaitForMultipleObjects(1, forThread, TRUE, INFINITE);
+    
+    answer[0] = count;
+    answer[1] = clock();
+
+    return answer;
 }
 
 
-
-//
-//void searchSurname(struct users* people)
-//{
-//    struct users* currentPeople = malloc(sizeof(struct users));
-//    struct users* forCurrentPeople;
-//    int j = 0, countOfRows = 1;
-//    char* forComprasion = "Гуськов";
-//    for (int i = 0; i < 100; i++)
-//    {
-//        if (strstr(people[i].surname, forComprasion) != NULL)
-//        {
-//            currentPeople[j] = people[i];
-//            forCurrentPeople = realloc(currentPeople, (j + 2) * sizeof(struct users));
-//            j++;
-//            currentPeople = forCurrentPeople;
-//        }
-//    }
-//    writeToFile(currentPeople, j);
-//}
-//
-//void searchSurnameIvanova(struct users* people)
-//{
-//    struct users* currentPeople = malloc(sizeof(struct users));
-//    struct users* forCurrentPeople;
-//    int j = 0, countOfRows = 1;
-//    char* forComprasion = "Иванова";
-//    for (int i = 0; i < 100; i++)
-//    {
-//        if (strstr(people[i].surname, forComprasion) != NULL)
-//        {
-//            currentPeople[j] = people[i];
-//            forCurrentPeople = realloc(currentPeople, (j + 2) * sizeof(struct users));
-//            j++;
-//            currentPeople = forCurrentPeople;
-//        }
-//    }
-//    writeToFileIvanova(currentPeople, j);
-//}
-//
-//void writeToFile(struct users* currentPeople, int countCurrentPeople)
-//{
-//    HANDLE fileResult = CreateFile(L"Result.csv", // создаваемый файл
-//        GENERIC_WRITE, // открывается для записи
-//        FILE_SHARE_WRITE, // совместно не используется
-//        NULL, // защита по умолчанию
-//        CREATE_ALWAYS, // переписывает существующий
-//        FILE_ATTRIBUTE_NORMAL, // асинхронный ввод/вывод I/O
-//        NULL); // атрибутов шаблона нет
-//    DWORD countFileSymbols;
-//    float averageAge = 0;
-//    char* dataForWritting = calloc(100, sizeof(char));
-//    for (int i = 0; i < countCurrentPeople; i++)
-//    {
-//        sprintf(dataForWritting, "%s;%s;%s;%d\n", currentPeople[i].surname, currentPeople[i].name, currentPeople[i].midname, currentPeople[i].age);
-//        WriteFile(fileResult, dataForWritting, strlen(dataForWritting), &countFileSymbols, NULL);
-//        averageAge += currentPeople[i].age;
-//    }
-//    averageAge /= countCurrentPeople;
-//    sprintf(dataForWritting, "Средний возраст: %f", averageAge);
-//    WriteFile(fileResult, dataForWritting, strlen(dataForWritting), &countFileSymbols, NULL);
-//    free(dataForWritting);
-//    CloseHandle(fileResult);
-//}
-//
-//void writeToFileIvanova(struct users* currentPeople, int countCurrentPeople)
-//{
-//    HANDLE fileResult = CreateFile(L"ResultIvanova.csv", // создаваемый файл
-//        GENERIC_WRITE, // открывается для записи
-//        FILE_SHARE_WRITE, // совместно не используется
-//        NULL, // защита по умолчанию
-//        CREATE_ALWAYS, // переписывает существующий
-//        FILE_ATTRIBUTE_NORMAL, // асинхронный ввод/вывод I/O
-//        NULL); // атрибутов шаблона нет
-//    DWORD countFileSymbols;
-//    float averageAge = 0;
-//    char* dataForWritting = calloc(100, sizeof(char));
-//    for (int i = 0; i < countCurrentPeople; i++)
-//    {
-//        sprintf(dataForWritting, "%s;%s;%s;%d\n", currentPeople[i].surname, currentPeople[i].name, currentPeople[i].midname, currentPeople[i].age);
-//        WriteFile(fileResult, dataForWritting, strlen(dataForWritting), &countFileSymbols, NULL);
-//        averageAge += currentPeople[i].age;
-//    }
-//    averageAge /= countCurrentPeople;
-//    sprintf(dataForWritting, "Средний возраст: %f", averageAge);
-//    WriteFile(fileResult, dataForWritting, strlen(dataForWritting), &countFileSymbols, NULL);
-//    free(dataForWritting);
-//    CloseHandle(fileResult);
-//}
